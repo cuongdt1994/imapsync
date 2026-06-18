@@ -51,6 +51,8 @@ def build_command(
         "--skipsize",
         "--tmpdir", str(Config.IMAPSYNC_TMPDIR),
         "--noreleasecheck",
+        "--timeout1", "0",
+        "--timeout2", "0",
     ]
 
     if folders:

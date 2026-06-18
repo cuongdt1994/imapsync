@@ -199,6 +199,7 @@ EnvironmentFile=${APP_DIR}/.env
 ExecStart=${APP_DIR}/venv/bin/gunicorn \\
     --workers ${GUNICORN_WORKERS} \\
     --bind ${BIND_HOST}:${BIND_PORT} \\
+    --timeout 3600 \\
     --access-logfile ${APP_DIR}/logs/gunicorn-access.log \\
     --error-logfile ${APP_DIR}/logs/gunicorn-error.log \\
     --capture-output \\
