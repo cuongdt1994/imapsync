@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+{% block title %}New Migration — IMAPsync{% endblock %}
+
+{% block content %}
+<h1>New Migration Job</h1>
+
+<form method="POST">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+
+    <div class="grid">
+        <label>
+            Source Account
+            <select name="source_account_id" required>
+                <option value="">— Select source —</option>
+                {% for acc in sources %}
+                <option value="{{ acc.id }}">{{ acc.name }} ({{ acc.imap_host }} | {{ acc.username }})</option>
+                {% endfor %}
+            </select>
+        </label>
+        <label>
+            Destination Account
+            <select name="dest_account_id" required>
+                <option value="">— Select destination —</option>
+                {% for acc in dests %}
+                <option value="{{ acc.id }}">{{ acc.name }} ({{ acc.imap_host }} | {{ acc.username }})</option>
+                {% endfor %}
+            </select>
+        </label>
+    </div>
+
+    <label>
+        Folders <small>(comma-separated, leave empty for all folders)</small>
+        <input type="text" name="folders"
+               placeholder="INBOX, Sent, Drafts">
+    </label>
+
+    <label>
+        Extra imapsync arguments <small>(optional, advanced)</small>
+        <input type="text" name="extra_args"
+               placeholder="e.g. --maxage 365 --delete2duplicates">
+    </label>
+
+    <div style="display: flex; gap: 0.5rem; align-items: center;">
+        <button type="submit" name="action" value="create">📝 Create Job</button>
+        <button type="submit" name="start_now" value="1" class="secondary">🚀 Create & Start</button>
+        <a href="{{ url_for('web.job_list') }}" role="button" class="secondary">Cancel</a>
+    </div>
+</form>
+
+{% if not sources or not dests %}
+<article class="flash-warning" style="margin-top: 1rem;">
+    <strong>⚠️ You need both source and destination accounts before creating a migration.</strong>
+    <br>
+    <a href="{{ url_for('web.account_add') }}">Add a source account →</a>
+    &nbsp;
+    <a href="{{ url_for('web.account_add') }}">Add a destination account →</a>
+</article>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,103 @@
+{% extends "base.html" %}
+{% block title %}Job #{{ job.id }} — IMAPsync{% endblock %}
+
+{% block head %}
+{% if job.status == 'running' %}
+<meta http-equiv="refresh" content="5">
+{% endif %}
+{% endblock %}
+
+{% block content %}
+<h1>Migration Job #{{ job.id }}</h1>
+
+<div class="grid">
+    <article>
+        <h5>Source</h5>
+        <p><strong>{{ job.source_name }}</strong></p>
+    </article>
+    <article>
+        <h5>Destination</h5>
+        <p><strong>{{ job.dest_name }}</strong></p>
+    </article>
+    <article>
+        <h5>Status</h5>
+        <p><span class="status-badge status-{{ job.status }}">{{ job.status | upper }}</span></p>
+    </article>
+    <article>
+        <h5>Folders</h5>
+        <p>{{ job.folders | simplify_folder }}</p>
+    </article>
+</div>
+
+<div class="grid">
+    <article>
+        <h5>Progress</h5>
+        {% if job.status == 'running' %}
+        <progress value="{{ job.synced_messages }}" max="{{ job.total_messages or 1 }}"></progress>
+        <p>{{ job.synced_messages }} / {{ job.total_messages or 'scanning…' }} synced</p>
+        {% elif job.status == 'completed' %}
+        <p>✅ {{ job.synced_messages }} synced, {{ job.skipped_messages }} skipped, {{ job.error_messages }} errors</p>
+        {% else %}
+        <p>—</p>
+        {% endif %}
+    </article>
+    <article>
+        <h5>Timing</h5>
+        <p>Created: {{ job.created_at[:19] }}</p>
+        {% if job.started_at %}
+        <p>Started: {{ job.started_at[:19] }}</p>
+        {% endif %}
+        {% if job.completed_at %}
+        <p>Completed: {{ job.completed_at[:19] }}</p>
+        {% endif %}
+    </article>
+</div>
+
+{% if job.extra_args %}
+<article>
+    <h5>Extra Arguments</h5>
+    <code>{{ job.extra_args }}</code>
+</article>
+{% endif %}
+
+<!-- Actions -->
+<div style="display: flex; gap: 0.5rem; margin: 1rem 0;">
+    {% if job.status == 'pending' %}
+    <form action="{{ url_for('web.job_start', job_id=job.id) }}" method="POST">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+        <button type="submit">▶ Start</button>
+    </form>
+    {% endif %}
+
+    {% if job.status == 'running' %}
+    <form action="{{ url_for('web.job_stop', job_id=job.id) }}" method="POST"
+          onsubmit="return confirm('Stop this migration? imapsync will finish the current message first.');">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+        <button type="submit" class="secondary">⏹ Stop</button>
+    </form>
+    {% endif %}
+
+    {% if job.status in ('completed', 'failed', 'stopped') %}
+    <form action="{{ url_for('web.job_retry', job_id=job.id) }}" method="POST">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+        <button type="submit">🔄 Retry (New Job)</button>
+    </form>
+    {% endif %}
+
+    <a href="{{ url_for('web.job_list') }}" role="button" class="secondary">← Back to Jobs</a>
+</div>
+
+<!-- Logs -->
+<h2>Logs {% if log_count %}<small>({{ log_count }} lines total)</small>{% endif %}</h2>
+
+{% if logs %}
+<pre class="log-viewer"><code>{% for entry in logs %}<span class="log-{{ entry.stream }}">[{{ entry.timestamp[:19] }}] {{ entry.line }}</span>
+{% endfor %}</code></pre>
+
+{% if log_count > 200 %}
+<p><em>Showing last 200 of {{ log_count }} lines. Logs older than {{ settings.get('log_retention_days', 30) }} days are auto-deleted.</em></p>
+{% endif %}
+{% else %}
+<p><em>No log output yet.</em></p>
+{% endif %}
+{% endblock %}

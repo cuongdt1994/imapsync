@@ -1,0 +1,25 @@
+[Unit]
+Description=IMAPsync Web
+After=network.target
+
+[Service]
+Type=simple
+User=imapsync
+Group=imapsync
+WorkingDirectory=/opt/imapsync-web
+EnvironmentFile=/opt/imapsync-web/.env
+ExecStart=/opt/imapsync-web/venv/bin/gunicorn \
+    --workers 2 \
+    --bind 0.0.0.0:5000 \
+    --access-logfile /opt/imapsync-web/logs/gunicorn-access.log \
+    --error-logfile /opt/imapsync-web/logs/gunicorn-error.log \
+    --capture-output \
+    --log-level info \
+    app:create_app()
+Restart=always
+RestartSec=10
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target

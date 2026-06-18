@@ -1,0 +1,65 @@
+{% extends "base.html" %}
+{% block title %}Edit Account — IMAPsync{% endblock %}
+
+{% block content %}
+<h1>Edit Account: {{ account.name }}</h1>
+
+<form method="POST">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+
+    <label>
+        Name
+        <input type="text" name="name" value="{{ account.name }}" required>
+    </label>
+
+    <div class="grid">
+        <label>
+            Role
+            <select name="role" required>
+                <option value="source" {% if account.role == 'source' %}selected{% endif %}>Source</option>
+                <option value="destination" {% if account.role == 'destination' %}selected{% endif %}>Destination</option>
+            </select>
+        </label>
+        <label>
+            Provider
+            <select name="provider">
+                <option value="generic" {% if account.provider == 'generic' %}selected{% endif %}>Generic IMAP</option>
+                <option value="workmail" {% if account.provider == 'workmail' %}selected{% endif %}>AWS WorkMail</option>
+                <option value="gmail" {% if account.provider == 'gmail' %}selected{% endif %}>Google Workspace</option>
+            </select>
+        </label>
+    </div>
+
+    <div class="grid">
+        <label>
+            IMAP Host
+            <input type="text" name="imap_host" value="{{ account.imap_host }}" required>
+        </label>
+        <label>
+            Port
+            <input type="number" name="imap_port" value="{{ account.imap_port }}" required>
+        </label>
+    </div>
+
+    <div class="grid">
+        <label>
+            Username
+            <input type="text" name="username" value="{{ account.username }}" required>
+        </label>
+        <label>
+            Password <small>(leave empty to keep current)</small>
+            <input type="password" name="password" placeholder="(unchanged)">
+        </label>
+    </div>
+
+    <label>
+        Notes <small>(optional)</small>
+        <input type="text" name="notes" value="{{ account.notes or '' }}">
+    </label>
+
+    <div style="display: flex; gap: 0.5rem;">
+        <button type="submit">💾 Save Changes</button>
+        <a href="{{ url_for('web.account_list') }}" role="button" class="secondary">Cancel</a>
+    </div>
+</form>
+{% endblock %}

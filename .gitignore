@@ -1,0 +1,26 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+dist/
+venv/
+.venv/
+
+# App data (contains encrypted credentials!)
+data/
+!data/.gitkeep
+
+# Logs
+logs/
+!logs/.gitkeep
+
+# Environment (contains secrets!)
+.env
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db

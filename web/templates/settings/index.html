@@ -1,0 +1,81 @@
+{% extends "base.html" %}
+{% block title %}Settings — IMAPsync{% endblock %}
+
+{% block content %}
+<h1>Settings</h1>
+
+<form method="POST">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+
+    <h2>Migration</h2>
+    <div class="grid">
+        <label>
+            Max Concurrent Jobs
+            <input type="number" name="max_concurrent_jobs"
+                   value="{{ settings.get('max_concurrent_jobs', '3') }}"
+                   min="1" max="10" required>
+            <small>Recommended: 2–4 for stability</small>
+        </label>
+        <label>
+            Log Retention (days)
+            <input type="number" name="log_retention_days"
+                   value="{{ settings.get('log_retention_days', '30') }}"
+                   min="1" max="365" required>
+        </label>
+    </div>
+
+    <label>
+        Timezone
+        <input type="text" name="timezone"
+               value="{{ settings.get('timezone', 'Asia/Ho_Chi_Minh') }}" required>
+    </label>
+
+    <h2>Authentication</h2>
+    <div class="grid">
+        <label>
+            Username
+            <input type="text" name="auth_username"
+                   value="{{ settings.get('auth_username', 'admin') }}" required>
+        </label>
+        <label>
+            Password <small>(leave empty to keep current)</small>
+            <input type="password" name="auth_password" placeholder="(unchanged)">
+        </label>
+    </div>
+
+    <button type="submit">💾 Save Settings</button>
+</form>
+
+<h2 style="margin-top: 2rem;">System Info</h2>
+<table>
+    <tr>
+        <td><strong>imapsync binary</strong></td>
+        <td>
+            <code>{{ imapsync_path }}</code>
+            {% if imapsync_ok %}
+            <span style="color: var(--pico-color-green-400);">✓ Found</span>
+            {% else %}
+            <span style="color: var(--pico-color-red-400);">✗ Not found!</span>
+            {% endif %}
+        </td>
+    </tr>
+    <tr>
+        <td><strong>Database</strong></td>
+        <td><code>{{ app_config.DATABASE_PATH }}</code></td>
+    </tr>
+    <tr>
+        <td><strong>Log directory</strong></td>
+        <td><code>{{ app_config.LOGS_DIR }}</code></td>
+    </tr>
+</table>
+
+{% if not imapsync_ok %}
+<article class="flash-warning">
+    <strong>⚠️ imapsync is not installed!</strong>
+    <p>Install it on Debian 12:</p>
+    <pre><code>sudo apt update
+sudo apt install imapsync</code></pre>
+    <p>Or follow instructions at <a href="https://imapsync.lamiral.info/" target="_blank">imapsync.lamiral.info</a>.</p>
+</article>
+{% endif %}
+{% endblock %}

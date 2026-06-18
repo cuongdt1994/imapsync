@@ -1,0 +1,82 @@
+{% extends "base.html" %}
+{% block title %}Dashboard — IMAPsync{% endblock %}
+
+{% block content %}
+<h1>Dashboard</h1>
+
+<div class="grid">
+    <article>
+        <h5>Running</h5>
+        <p class="stat-number">{{ stats.running }}</p>
+    </article>
+    <article>
+        <h5>Completed</h5>
+        <p class="stat-number">{{ stats.completed }}</p>
+    </article>
+    <article>
+        <h5>Failed</h5>
+        <p class="stat-number">{{ stats.failed }}</p>
+    </article>
+    <article>
+        <h5>Queue Slots</h5>
+        <p class="stat-number">
+            {{ stats.running }} / {{ stats.max_concurrent }}
+            {% if stats.queue_available %}
+            <span style="color: var(--pico-color-green-400);">✓ Available</span>
+            {% else %}
+            <span style="color: var(--pico-color-red-400);">⚠ Full</span>
+            {% endif %}
+        </p>
+    </article>
+</div>
+
+<div style="margin-top: 2rem;">
+    <div style="display: flex; justify-content: space-between; align-items: center;">
+        <h2>Recent Migrations</h2>
+        <a href="{{ url_for('web.job_create') }}" role="button">➕ New Migration</a>
+    </div>
+
+    {% if recent_jobs %}
+    <table class="striped">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Source → Dest</th>
+                <th>Status</th>
+                <th>Messages</th>
+                <th>Created</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for job in recent_jobs %}
+            <tr>
+                <td><strong>#{{ job.id }}</strong></td>
+                <td><small>{{ job.source_name }} → {{ job.dest_name }}</small></td>
+                <td>
+                    <span class="status-badge status-{{ job.status }}">{{ job.status }}</span>
+                </td>
+                <td>
+                    {% if job.status == 'running' %}
+                    {{ job.synced_messages }} / {{ job.total_messages or '?' }}
+                    {% elif job.status == 'completed' %}
+                    {{ job.synced_messages }} synced
+                    {% else %}
+                    —
+                    {% endif %}
+                </td>
+                <td><small>{{ job.created_at[:16] }}</small></td>
+                <td>
+                    <a href="{{ url_for('web.job_detail', job_id=job.id) }}">View</a>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <p><em>No migrations yet.</em></p>
+    {% endif %}
+
+    <a href="{{ url_for('web.job_list') }}">View all jobs →</a>
+</div>
+{% endblock %}

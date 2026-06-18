@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+{% block title %}Accounts — IMAPsync{% endblock %}
+
+{% block content %}
+<div style="display: flex; justify-content: space-between; align-items: center;">
+    <h1>Accounts</h1>
+    <a href="{{ url_for('web.account_add') }}" role="button">➕ Add Account</a>
+</div>
+
+{% if accounts %}
+<table class="striped">
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Role</th>
+            <th>Provider</th>
+            <th>Host:Port</th>
+            <th>Username</th>
+            <th>Password</th>
+            <th>Actions</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for acc in accounts %}
+        <tr>
+            <td><strong>{{ acc.name }}</strong>{% if acc.notes %} <small>({{ acc.notes }})</small>{% endif %}</td>
+            <td><span class="status-badge status-{{ acc.role }}">{{ acc.role }}</span></td>
+            <td>{{ acc.provider }}</td>
+            <td><code>{{ acc.imap_host }}:{{ acc.imap_port }}</code></td>
+            <td><code>{{ acc.username }}</code></td>
+            <td><code>{{ acc.password | mask_password }}</code></td>
+            <td>
+                <a href="{{ url_for('web.account_edit', account_id=acc.id) }}">Edit</a> |
+                <form action="{{ url_for('web.account_delete', account_id=acc.id) }}" method="POST" style="display:inline"
+                      onsubmit="return confirm('Delete account \'{{ acc.name }}\'?');">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                    <button type="submit" class="link-button">Delete</button>
+                </form>
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% else %}
+<p><em>No accounts configured. Add source and destination accounts to get started.</em></p>
+{% endif %}
+{% endblock %}
