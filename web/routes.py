@@ -6,7 +6,7 @@ import json
 import uuid
 
 from flask import (
-    Blueprint, Response, flash, jsonify, redirect, render_template,
+    Blueprint, Response, flash, g, jsonify, redirect, render_template,
     request, url_for,
 )
 
@@ -30,10 +30,12 @@ def inject_globals():
 
 
 def _csrf_token() -> str:
-    """Generate or retrieve a simple CSRF token stored in session cookie."""
+    """Generate or retrieve a simple CSRF token stored in cookie."""
     token = request.cookies.get("csrf_token")
     if not token:
         token = uuid.uuid4().hex
+    # Store in g so after_request can set it as a cookie if needed
+    g.csrf_token = token
     return token
 
 
@@ -53,6 +55,15 @@ def _check_csrf() -> bool:
 def before_request():
     """All web routes require authentication."""
     pass
+
+
+@web_bp.after_request
+def set_csrf_cookie(response):
+    """Ensure every response has a CSRF cookie set."""
+    if not request.cookies.get("csrf_token"):
+        token = getattr(g, "csrf_token", uuid.uuid4().hex)
+        response.set_cookie("csrf_token", token, httponly=True, samesite="Strict")
+    return response
 
 
 # ---- Dashboard ----
