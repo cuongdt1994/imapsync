@@ -147,6 +147,29 @@ def get_running_jobs() -> list[dict]:
     return [dict(r) for r in rows]
 
 
+def delete_job(job_id: int) -> tuple[bool, str]:
+    """Delete a job and its logs.
+    Refuses to delete running jobs (must be stopped first).
+    Returns (success, message).
+    """
+    job = get_job(job_id)
+    if not job:
+        return False, "Job not found."
+    if job["status"] == "running":
+        return False, "Cannot delete a running job. Stop it first."
+
+    conn = get_connection()
+
+    # Delete associated logs
+    conn.execute("DELETE FROM job_logs WHERE job_id = ?", (job_id,))
+
+    # Delete the job
+    conn.execute("DELETE FROM jobs WHERE id = ?", (job_id,))
+
+    conn.commit()
+    return True, f"Job #{job_id} deleted."
+
+
 def count_jobs_by_status() -> dict[str, int]:
     """Return counts of jobs grouped by status."""
     conn = get_connection()

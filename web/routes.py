@@ -363,6 +363,20 @@ def job_retry(job_id: int):
     return redirect(url_for("web.job_detail", job_id=new_id))
 
 
+@web_bp.route("/jobs/<int:job_id>/delete", methods=["POST"])
+def job_delete(job_id: int):
+    if not _check_csrf():
+        return Response("CSRF validation failed", 400)
+
+    success, message = job_model.delete_job(job_id)
+    if success:
+        flash(message, "success")
+        return redirect(url_for("web.job_list"))
+    else:
+        flash(message, "error")
+        return redirect(url_for("web.job_detail", job_id=job_id))
+
+
 # ---- API (JSON) ----
 
 @web_bp.route("/api/jobs/<int:job_id>")

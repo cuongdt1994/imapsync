@@ -101,6 +101,17 @@
     </form>
     {% endif %}
 
+    {% if job.status != 'running' %}
+    <form action="{{ url_for('web.job_delete', job_id=job.id) }}" method="POST"
+          onsubmit="return confirm('Permanently delete job #{{ job.id }} and all its logs?');">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+        <button type="submit"
+                class="inline-flex items-center gap-1.5 px-5 py-2.5 border border-red-300 text-red-600 rounded-lg hover:bg-red-50 font-medium text-sm transition-colors">
+            🗑 Delete
+        </button>
+    </form>
+    {% endif %}
+
     <a href="{{ url_for('web.job_list') }}"
        class="inline-flex items-center gap-1.5 px-5 py-2.5 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 font-medium text-sm transition-colors">
         ← Back to Jobs

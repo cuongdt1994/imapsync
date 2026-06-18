@@ -77,6 +77,13 @@
                         <button type="submit" class="text-amber-600 hover:text-amber-800 font-medium bg-transparent border-none p-0 cursor-pointer">Retry</button>
                     </form>
                     {% endif %}
+                    {% if job.status != 'running' %}
+                    <form action="{{ url_for('web.job_delete', job_id=job.id) }}" method="POST" class="inline"
+                          onsubmit="return confirm('Permanently delete job #{{ job.id }} and all its logs?');">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                        <button type="submit" class="text-red-500 hover:text-red-700 font-medium bg-transparent border-none p-0 cursor-pointer">Delete</button>
+                    </form>
+                    {% endif %}
                 </td>
             </tr>
             {% endfor %}

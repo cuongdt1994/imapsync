@@ -181,6 +181,22 @@ def run_job(job_id: int, on_complete: Callable | None = None) -> None:
             masked_cmd[i] = "***"
     logger.info("Starting job %d: %s", job_id, " ".join(masked_cmd))
 
+    # Clear CGI-related environment variables so imapsync does NOT
+    # auto-detect CGI mode (it would hard-code /var/tmp/imapsync_cgi/
+    # and ignore --tmpdir).  See INSTALL.OnlineUI.txt lines 387-390.
+    clean_env = os.environ.copy()
+    for cgi_var in (
+        "GATEWAY_INTERFACE", "SERVER_SOFTWARE", "REQUEST_METHOD",
+        "QUERY_STRING", "CONTENT_TYPE", "CONTENT_LENGTH",
+        "HTTP_ACCEPT", "HTTP_USER_AGENT", "REMOTE_ADDR",
+        "SERVER_PROTOCOL", "SERVER_NAME", "SERVER_PORT",
+        "SCRIPT_NAME", "PATH_INFO", "PATH_TRANSLATED",
+        "REMOTE_HOST", "REMOTE_IDENT", "AUTH_TYPE",
+        "REMOTE_USER", "DOCUMENT_ROOT", "HTTP_HOST",
+        "HTTP_COOKIE", "HTTP_REFERER",
+    ):
+        clean_env.pop(cgi_var, None)
+
     try:
         process = subprocess.Popen(
             cmd,
@@ -188,6 +204,7 @@ def run_job(job_id: int, on_complete: Callable | None = None) -> None:
             stderr=subprocess.PIPE,
             text=True,
             bufsize=1,
+            env=clean_env,
         )
 
         # Track process for stopping
