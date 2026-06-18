@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-# install.sh — Deploy IMAPsync Web on Debian 12
+# install.sh — Deploy IMAPsync Web on Debian 12 / Ubuntu 24.04
 #
 # Usage: sudo bash install.sh
 #
@@ -37,8 +37,11 @@ if [ "$(id -u)" -ne 0 ]; then
     err "This script must be run as root (sudo)."
 fi
 
-if [ ! -f /etc/debian_version ]; then
-    warn "This script is designed for Debian. Proceeding anyway..."
+if [ -f /etc/os-release ]; then
+    . /etc/os-release
+    log "Detected OS: $NAME $VERSION_ID"
+elif [ ! -f /etc/debian_version ]; then
+    warn "This script is designed for Debian/Ubuntu. Proceeding anyway..."
 fi
 
 # ── System packages ────────────────────────────────────────────
@@ -48,13 +51,46 @@ apt-get install -y -qq \
     python3 \
     python3-venv \
     python3-pip \
-    imapsync \
-    curl
+    curl \
+    wget \
+    rsync \
+    libauthen-ntlm-perl \
+    libcgi-pm-perl \
+    libcrypt-openssl-rsa-perl \
+    libdata-uniqid-perl \
+    libencode-imaputf7-perl \
+    libfile-copy-recursive-perl \
+    libfile-tail-perl \
+    libio-socket-inet6-perl \
+    libio-socket-ssl-perl \
+    libio-tee-perl \
+    libhtml-parser-perl \
+    libjson-webtoken-perl \
+    libmail-imapclient-perl \
+    libparse-recdescent-perl \
+    libreadonly-perl \
+    libregexp-common-perl \
+    libsys-meminfo-perl \
+    libunicode-string-perl \
+    liburi-perl \
+    libwww-perl \
+    make
 
-# Verify imapsync is installed
-if ! /usr/bin/imapsync --version &>/dev/null; then
-    warn "imapsync is not available from Debian repos."
-    warn "Install it manually: https://imapsync.lamiral.info/"
+# ── Install imapsync (not in Debian repos) ─────────────────────
+IMAPSYNC_BIN="/usr/local/bin/imapsync"
+if [ ! -f "$IMAPSYNC_BIN" ]; then
+    log "Downloading imapsync from upstream..."
+    wget -q -O "$IMAPSYNC_BIN" \
+        "https://imapsync.lamiral.info/dist/imapsync"
+    chmod +x "$IMAPSYNC_BIN"
+fi
+
+# Verify imapsync works
+if "$IMAPSYNC_BIN" --version &>/dev/null; then
+    log "imapsync installed: $($IMAPSYNC_BIN --version 2>&1 | head -1)"
+else
+    warn "imapsync still has issues. Check: perl -c $IMAPSYNC_BIN"
+    warn "You may need: apt install libpar-packer-perl libmodule-scandeps-perl"
 fi
 
 # ── Create system user ─────────────────────────────────────────

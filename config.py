@@ -35,7 +35,7 @@ class Config:
 
     # imapsync
     IMAPSYNC_PATH: str = os.environ.get(
-        "IMAPSYNC_PATH", "/usr/bin/imapsync"
+        "IMAPSYNC_PATH", "/usr/local/bin/imapsync"
     )
     IMAPSYNC_TMPDIR: str = os.environ.get("IMAPSYNC_TMPDIR", "/tmp")
 

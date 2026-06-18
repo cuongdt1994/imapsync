@@ -70,7 +70,7 @@ CREATE TABLE IF NOT EXISTS settings (
 DEFAULT_SETTINGS = {
     "max_concurrent_jobs": "3",
     "log_retention_days": "30",
-    "imapsync_path": "/usr/bin/imapsync",
+    "imapsync_path": "/usr/local/bin/imapsync",
     "timezone": "Asia/Ho_Chi_Minh",
     "auth_username": "admin",
     # auth_password_hash is set during setup
