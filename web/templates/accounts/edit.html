@@ -22,7 +22,7 @@
         </label>
         <label>
             Provider
-            <select name="provider">
+            <select name="provider" id="provider">
                 <option value="generic" {% if account.provider == 'generic' %}selected{% endif %}>Generic IMAP</option>
                 <option value="workmail" {% if account.provider == 'workmail' %}selected{% endif %}>AWS WorkMail</option>
                 <option value="gmail" {% if account.provider == 'gmail' %}selected{% endif %}>Google Workspace</option>
@@ -33,11 +33,11 @@
     <div class="grid">
         <label>
             IMAP Host
-            <input type="text" name="imap_host" value="{{ account.imap_host }}" required>
+            <input type="text" name="imap_host" id="imap_host" value="{{ account.imap_host }}" required>
         </label>
         <label>
             Port
-            <input type="number" name="imap_port" value="{{ account.imap_port }}" required>
+            <input type="number" name="imap_port" id="imap_port" value="{{ account.imap_port }}" required>
         </label>
     </div>
 
@@ -62,4 +62,25 @@
         <a href="{{ url_for('web.account_list') }}" role="button" class="secondary">Cancel</a>
     </div>
 </form>
+
+<script>
+const IMAP_HOSTS = {
+    gmail:    { host: 'imap.gmail.com', port: 993 },
+    workmail: { host: 'imap.mail.us-east-1.awsapps.com', port: 993 },
+};
+const providerEl = document.getElementById('provider');
+const hostEl = document.getElementById('imap_host');
+const portEl = document.getElementById('imap_port');
+
+providerEl.addEventListener('change', function () {
+    const preset = IMAP_HOSTS[this.value];
+    if (preset) {
+        hostEl.value = preset.host;
+        portEl.value = preset.port;
+    } else {
+        hostEl.value = '';
+        portEl.value = 993;
+    }
+});
+</script>
 {% endblock %}
