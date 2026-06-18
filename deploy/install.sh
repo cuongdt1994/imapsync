@@ -111,7 +111,7 @@ PROJECT_DIR="$(dirname "$SCRIPT_DIR")"
 
 if [ -f "$PROJECT_DIR/app.py" ]; then
     log "Copying project files from $PROJECT_DIR to $APP_DIR"
-    rsync -a --exclude '.git' --exclude '__pycache__' --exclude '*.pyc' \
+    rsync -a --exclude '__pycache__' --exclude '*.pyc' \
           --exclude 'data/' --exclude 'logs/' --exclude '.env' \
           "$PROJECT_DIR/" "$APP_DIR/"
 else
