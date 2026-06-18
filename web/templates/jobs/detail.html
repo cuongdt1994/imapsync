@@ -8,64 +8,75 @@
 {% endblock %}
 
 {% block content %}
-<h1>Migration Job #{{ job.id }}</h1>
+<h1 class="text-2xl font-bold text-gray-900 mb-6">Migration Job #{{ job.id }}</h1>
 
-<div class="grid">
-    <article>
-        <h5>Source</h5>
-        <p><strong>{{ job.source_name }}</strong></p>
-    </article>
-    <article>
-        <h5>Destination</h5>
-        <p><strong>{{ job.dest_name }}</strong></p>
-    </article>
-    <article>
-        <h5>Status</h5>
-        <p><span class="status-badge status-{{ job.status }}">{{ job.status | upper }}</span></p>
-    </article>
-    <article>
-        <h5>Folders</h5>
-        <p>{{ job.folders | simplify_folder }}</p>
-    </article>
+<!-- Info cards -->
+<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 mb-6">
+    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-5">
+        <p class="text-sm font-medium text-gray-500 mb-1">Source</p>
+        <p class="text-base font-semibold text-gray-900">{{ job.source_name }}</p>
+    </div>
+    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-5">
+        <p class="text-sm font-medium text-gray-500 mb-1">Destination</p>
+        <p class="text-base font-semibold text-gray-900">{{ job.dest_name }}</p>
+    </div>
+    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-5">
+        <p class="text-sm font-medium text-gray-500 mb-1">Status</p>
+        {% set colors = {'running':'blue','completed':'emerald','failed':'red','stopped':'amber','pending':'gray'} %}
+        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-{{ colors.get(job.status, 'gray') }}-100 text-{{ colors.get(job.status, 'gray') }}-800 uppercase">
+            {{ job.status }}
+        </span>
+    </div>
+    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-5">
+        <p class="text-sm font-medium text-gray-500 mb-1">Folders</p>
+        <p class="text-base font-semibold text-gray-900">{{ job.folders | simplify_folder }}</p>
+    </div>
 </div>
 
-<div class="grid">
-    <article>
-        <h5>Progress</h5>
+<!-- Progress + Timing -->
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-5 mb-6">
+    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-5">
+        <h5 class="text-sm font-medium text-gray-500 mb-3">Progress</h5>
         {% if job.status == 'running' %}
-        <progress value="{{ job.synced_messages }}" max="{{ job.total_messages or 1 }}"></progress>
-        <p>{{ job.synced_messages }} / {{ job.total_messages or 'scanning…' }} synced</p>
+        <div class="w-full bg-gray-200 rounded-full h-2.5 mb-2">
+            <div class="bg-blue-600 rounded-full h-2.5 transition-all duration-700"
+                 style="width: {% if job.total_messages %}{{ (job.synced_messages / job.total_messages * 100) | int }}{% else %}0{% endif %}%"></div>
+        </div>
+        <p class="text-sm text-gray-600">{{ job.synced_messages }} / {{ job.total_messages or 'scanning…' }} synced</p>
         {% elif job.status == 'completed' %}
-        <p>✅ {{ job.synced_messages }} synced, {{ job.skipped_messages }} skipped, {{ job.error_messages }} errors</p>
+        <p class="text-sm text-emerald-700">✅ {{ job.synced_messages }} synced, {{ job.skipped_messages }} skipped, {{ job.error_messages }} errors</p>
         {% else %}
-        <p>—</p>
+        <p class="text-sm text-gray-400">—</p>
         {% endif %}
-    </article>
-    <article>
-        <h5>Timing</h5>
-        <p>Created: {{ job.created_at[:19] }}</p>
+    </div>
+    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-5">
+        <h5 class="text-sm font-medium text-gray-500 mb-3">Timing</h5>
+        <p class="text-sm text-gray-600">Created: {{ job.created_at[:19] }}</p>
         {% if job.started_at %}
-        <p>Started: {{ job.started_at[:19] }}</p>
+        <p class="text-sm text-gray-600">Started: {{ job.started_at[:19] }}</p>
         {% endif %}
         {% if job.completed_at %}
-        <p>Completed: {{ job.completed_at[:19] }}</p>
+        <p class="text-sm text-gray-600">Completed: {{ job.completed_at[:19] }}</p>
         {% endif %}
-    </article>
+    </div>
 </div>
 
 {% if job.extra_args %}
-<article>
-    <h5>Extra Arguments</h5>
-    <code>{{ job.extra_args }}</code>
-</article>
+<div class="bg-white rounded-xl shadow-sm border border-gray-200 p-5 mb-6">
+    <h5 class="text-sm font-medium text-gray-500 mb-2">Extra Arguments</h5>
+    <code class="text-sm bg-gray-100 px-2 py-1 rounded text-gray-700">{{ job.extra_args }}</code>
+</div>
 {% endif %}
 
-<!-- Actions -->
-<div style="display: flex; gap: 0.5rem; margin: 1rem 0;">
+<!-- Action buttons -->
+<div class="flex items-center gap-3 mb-8">
     {% if job.status == 'pending' %}
     <form action="{{ url_for('web.job_start', job_id=job.id) }}" method="POST">
         <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
-        <button type="submit">▶ Start</button>
+        <button type="submit"
+                class="inline-flex items-center gap-1.5 px-5 py-2.5 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 font-medium text-sm transition-colors">
+            ▶ Start
+        </button>
     </form>
     {% endif %}
 
@@ -73,31 +84,44 @@
     <form action="{{ url_for('web.job_stop', job_id=job.id) }}" method="POST"
           onsubmit="return confirm('Stop this migration? imapsync will finish the current message first.');">
         <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
-        <button type="submit" class="secondary">⏹ Stop</button>
+        <button type="submit"
+                class="inline-flex items-center gap-1.5 px-5 py-2.5 bg-red-500 text-white rounded-lg hover:bg-red-600 font-medium text-sm transition-colors">
+            ⏹ Stop
+        </button>
     </form>
     {% endif %}
 
     {% if job.status in ('completed', 'failed', 'stopped') %}
     <form action="{{ url_for('web.job_retry', job_id=job.id) }}" method="POST">
         <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
-        <button type="submit">🔄 Retry (New Job)</button>
+        <button type="submit"
+                class="inline-flex items-center gap-1.5 px-5 py-2.5 bg-amber-500 text-white rounded-lg hover:bg-amber-600 font-medium text-sm transition-colors">
+            🔄 Retry (New Job)
+        </button>
     </form>
     {% endif %}
 
-    <a href="{{ url_for('web.job_list') }}" role="button" class="secondary">← Back to Jobs</a>
+    <a href="{{ url_for('web.job_list') }}"
+       class="inline-flex items-center gap-1.5 px-5 py-2.5 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 font-medium text-sm transition-colors">
+        ← Back to Jobs
+    </a>
 </div>
 
 <!-- Logs -->
-<h2>Logs {% if log_count %}<small>({{ log_count }} lines total)</small>{% endif %}</h2>
+<h2 class="text-lg font-semibold text-gray-900 mb-3">
+    Logs {% if log_count %}<span class="text-sm font-normal text-gray-400">({{ log_count }} lines total)</span>{% endif %}
+</h2>
 
 {% if logs %}
 <pre class="log-viewer"><code>{% for entry in logs %}<span class="log-{{ entry.stream }}">[{{ entry.timestamp[:19] }}] {{ entry.line }}</span>
 {% endfor %}</code></pre>
 
 {% if log_count > 200 %}
-<p><em>Showing last 200 of {{ log_count }} lines. Logs older than {{ settings.get('log_retention_days', 30) }} days are auto-deleted.</em></p>
+<p class="mt-2 text-xs text-gray-400">Showing last 200 of {{ log_count }} lines. Logs older than {{ settings.get('log_retention_days', 30) }} days are auto-deleted.</p>
 {% endif %}
 {% else %}
-<p><em>No log output yet.</em></p>
+<div class="bg-white rounded-xl shadow-sm border border-dashed border-gray-300 p-8 text-center">
+    <p class="text-gray-400">No log output yet.</p>
+</div>
 {% endif %}
 {% endblock %}

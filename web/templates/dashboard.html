@@ -2,81 +2,89 @@
 {% block title %}Dashboard — IMAPsync{% endblock %}
 
 {% block content %}
-<h1>Dashboard</h1>
+<h1 class="text-2xl font-bold text-gray-900 mb-6">Dashboard</h1>
 
-<div class="grid">
-    <article>
-        <h5>Running</h5>
-        <p class="stat-number">{{ stats.running }}</p>
-    </article>
-    <article>
-        <h5>Completed</h5>
-        <p class="stat-number">{{ stats.completed }}</p>
-    </article>
-    <article>
-        <h5>Failed</h5>
-        <p class="stat-number">{{ stats.failed }}</p>
-    </article>
-    <article>
-        <h5>Queue Slots</h5>
-        <p class="stat-number">
-            {{ stats.running }} / {{ stats.max_concurrent }}
-            {% if stats.queue_available %}
-            <span style="color: var(--pico-color-green-400);">✓ Available</span>
-            {% else %}
-            <span style="color: var(--pico-color-red-400);">⚠ Full</span>
-            {% endif %}
-        </p>
-    </article>
+<!-- Stat cards -->
+<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 mb-8">
+    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+        <p class="text-sm font-medium text-gray-500">Running</p>
+        <p class="mt-2 text-3xl font-bold text-blue-600">{{ stats.running }}</p>
+    </div>
+    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+        <p class="text-sm font-medium text-gray-500">Completed</p>
+        <p class="mt-2 text-3xl font-bold text-emerald-600">{{ stats.completed }}</p>
+    </div>
+    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+        <p class="text-sm font-medium text-gray-500">Failed</p>
+        <p class="mt-2 text-3xl font-bold text-red-500">{{ stats.failed }}</p>
+    </div>
+    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+        <p class="text-sm font-medium text-gray-500">Queue Slots</p>
+        <p class="mt-2 text-3xl font-bold text-gray-900">{{ stats.running }} / {{ stats.max_concurrent }}</p>
+        {% if stats.queue_available %}
+        <p class="mt-1 text-xs font-medium text-emerald-600">✓ Available</p>
+        {% else %}
+        <p class="mt-1 text-xs font-medium text-red-500">⚠ Full</p>
+        {% endif %}
+    </div>
 </div>
 
-<div style="margin-top: 2rem;">
-    <div style="display: flex; justify-content: space-between; align-items: center;">
-        <h2>Recent Migrations</h2>
-        <a href="{{ url_for('web.job_create') }}" role="button">➕ New Migration</a>
-    </div>
+<!-- Recent jobs -->
+<div class="flex items-center justify-between mb-4">
+    <h2 class="text-lg font-semibold text-gray-900">Recent Migrations</h2>
+    <a href="{{ url_for('web.job_create') }}"
+       class="inline-flex items-center gap-1.5 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm font-medium transition-colors">
+        + New Migration
+    </a>
+</div>
 
-    {% if recent_jobs %}
-    <table class="striped">
-        <thead>
+{% if recent_jobs %}
+<div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+    <table class="min-w-full divide-y divide-gray-200">
+        <thead class="bg-gray-50">
             <tr>
-                <th>ID</th>
-                <th>Source → Dest</th>
-                <th>Status</th>
-                <th>Messages</th>
-                <th>Created</th>
-                <th>Actions</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ID</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Source → Dest</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Progress</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Created</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
             </tr>
         </thead>
-        <tbody>
+        <tbody class="bg-white divide-y divide-gray-200">
             {% for job in recent_jobs %}
-            <tr>
-                <td><strong>#{{ job.id }}</strong></td>
-                <td><small>{{ job.source_name }} → {{ job.dest_name }}</small></td>
-                <td>
-                    <span class="status-badge status-{{ job.status }}">{{ job.status }}</span>
+            <tr class="hover:bg-gray-50 transition-colors">
+                <td class="px-6 py-4 whitespace-nowrap text-sm font-semibold text-gray-900">#{{ job.id }}</td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">{{ job.source_name }} → {{ job.dest_name }}</td>
+                <td class="px-6 py-4 whitespace-nowrap">
+                    {% set colors = {'running':'blue','completed':'emerald','failed':'red','stopped':'amber','pending':'gray'} %}
+                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-{{ colors.get(job.status, 'gray') }}-100 text-{{ colors.get(job.status, 'gray') }}-800">
+                        {{ job.status }}
+                    </span>
                 </td>
-                <td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                     {% if job.status == 'running' %}
                     {{ job.synced_messages }} / {{ job.total_messages or '?' }}
                     {% elif job.status == 'completed' %}
                     {{ job.synced_messages }} synced
-                    {% else %}
-                    —
-                    {% endif %}
+                    {% else %}—{% endif %}
                 </td>
-                <td><small>{{ job.created_at[:16] }}</small></td>
-                <td>
-                    <a href="{{ url_for('web.job_detail', job_id=job.id) }}">View</a>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-400">{{ job.created_at[:16] }}</td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm">
+                    <a href="{{ url_for('web.job_detail', job_id=job.id) }}" class="text-blue-600 hover:text-blue-800 font-medium">View</a>
                 </td>
             </tr>
             {% endfor %}
         </tbody>
     </table>
-    {% else %}
-    <p><em>No migrations yet.</em></p>
-    {% endif %}
+</div>
+{% else %}
+<div class="bg-white rounded-xl shadow-sm border border-dashed border-gray-300 p-12 text-center">
+    <p class="text-gray-400">No migrations yet. Create your first migration job to get started.</p>
+</div>
+{% endif %}
 
-    <a href="{{ url_for('web.job_list') }}">View all jobs →</a>
+<div class="mt-4">
+    <a href="{{ url_for('web.job_list') }}" class="text-sm text-blue-600 hover:text-blue-800 font-medium">View all jobs →</a>
 </div>
 {% endblock %}

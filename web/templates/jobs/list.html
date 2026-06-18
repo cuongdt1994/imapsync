@@ -2,82 +2,101 @@
 {% block title %}Jobs — IMAPsync{% endblock %}
 
 {% block content %}
-<div style="display: flex; justify-content: space-between; align-items: center;">
-    <h1>Migration Jobs</h1>
-    <a href="{{ url_for('web.job_create') }}" role="button">➕ New Migration</a>
+<div class="flex items-center justify-between mb-6">
+    <h1 class="text-2xl font-bold text-gray-900">Migration Jobs</h1>
+    <a href="{{ url_for('web.job_create') }}"
+       class="inline-flex items-center gap-1.5 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm font-medium transition-colors">
+        + New Migration
+    </a>
 </div>
 
-<div class="filter-bar">
-    <a href="{{ url_for('web.job_list') }}" class="{% if not status_filter %}active{% endif %}">All</a>
-    <a href="{{ url_for('web.job_list', status='running') }}" class="{% if status_filter == 'running' %}active{% endif %}">Running</a>
-    <a href="{{ url_for('web.job_list', status='completed') }}" class="{% if status_filter == 'completed' %}active{% endif %}">Completed</a>
-    <a href="{{ url_for('web.job_list', status='failed') }}" class="{% if status_filter == 'failed' %}active{% endif %}">Failed</a>
-    <a href="{{ url_for('web.job_list', status='pending') }}" class="{% if status_filter == 'pending' %}active{% endif %}">Pending</a>
+<!-- Filter bar -->
+<div class="flex gap-2 mb-6 flex-wrap">
+    {% set filters = [('', 'All'), ('running', 'Running'), ('completed', 'Completed'), ('failed', 'Failed'), ('pending', 'Pending')] %}
+    {% for val, label in filters %}
+    <a href="{{ url_for('web.job_list', status=val) if val else url_for('web.job_list') }}"
+       class="px-3 py-1.5 rounded-lg text-sm font-medium transition-colors
+              {% if status_filter == val %}bg-blue-600 text-white{% else %}bg-white text-gray-600 border border-gray-300 hover:bg-gray-50{% endif %}">
+        {{ label }}
+    </a>
+    {% endfor %}
 </div>
 
 {% if jobs %}
-<table class="striped">
-    <thead>
-        <tr>
-            <th>ID</th>
-            <th>Source</th>
-            <th>Destination</th>
-            <th>Folders</th>
-            <th>Status</th>
-            <th>Progress</th>
-            <th>Created</th>
-            <th>Actions</th>
-        </tr>
-    </thead>
-    <tbody>
-        {% for job in jobs %}
-        <tr>
-            <td><strong>#{{ job.id }}</strong></td>
-            <td><small>{{ job.source_name }}</small></td>
-            <td><small>{{ job.dest_name }}</small></td>
-            <td><small>{{ job.folders | simplify_folder }}</small></td>
-            <td>
-                <span class="status-badge status-{{ job.status }}">{{ job.status }}</span>
-            </td>
-            <td>
-                {% if job.status == 'running' %}
-                <progress value="{{ job.synced_messages }}" max="{{ job.total_messages or 1 }}"></progress>
-                <small>{{ job.synced_messages }} / {{ job.total_messages or '?' }}</small>
-                {% elif job.status == 'completed' %}
-                <small>{{ job.synced_messages }} synced, {{ job.skipped_messages }} skipped</small>
-                {% elif job.exit_code is not none %}
-                <small>exit code: {{ job.exit_code }}</small>
-                {% else %}
-                <small>—</small>
-                {% endif %}
-            </td>
-            <td><small>{{ job.created_at[:16] }}</small></td>
-            <td>
-                <a href="{{ url_for('web.job_detail', job_id=job.id) }}">View</a>
-                {% if job.status == 'pending' %}
-                | <form action="{{ url_for('web.job_start', job_id=job.id) }}" method="POST" style="display:inline">
-                    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
-                    <button type="submit" class="link-button">Start</button>
-                </form>
-                {% endif %}
-                {% if job.status in ('completed', 'failed', 'stopped') %}
-                | <form action="{{ url_for('web.job_retry', job_id=job.id) }}" method="POST" style="display:inline">
-                    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
-                    <button type="submit" class="link-button">Retry</button>
-                </form>
-                {% endif %}
-            </td>
-        </tr>
-        {% endfor %}
-    </tbody>
-</table>
+<div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+    <table class="min-w-full divide-y divide-gray-200">
+        <thead class="bg-gray-50">
+            <tr>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ID</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Source</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Destination</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Folders</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Progress</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Created</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+            </tr>
+        </thead>
+        <tbody class="bg-white divide-y divide-gray-200">
+            {% for job in jobs %}
+            <tr class="hover:bg-gray-50 transition-colors">
+                <td class="px-6 py-4 whitespace-nowrap text-sm font-semibold text-gray-900">#{{ job.id }}</td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">{{ job.source_name }}</td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">{{ job.dest_name }}</td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ job.folders | simplify_folder }}</td>
+                <td class="px-6 py-4 whitespace-nowrap">
+                    {% set colors = {'running':'blue','completed':'emerald','failed':'red','stopped':'amber','pending':'gray'} %}
+                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-{{ colors.get(job.status, 'gray') }}-100 text-{{ colors.get(job.status, 'gray') }}-800">
+                        {{ job.status }}
+                    </span>
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    {% if job.status == 'running' %}
+                    <div class="w-24 bg-gray-200 rounded-full h-1.5 mb-1">
+                        <div class="bg-blue-600 rounded-full h-1.5 transition-all" style="width: {% if job.total_messages %}{{ (job.synced_messages / job.total_messages * 100) | int }}{% else %}0{% endif %}%"></div>
+                    </div>
+                    <span class="text-xs">{{ job.synced_messages }} / {{ job.total_messages or '?' }}</span>
+                    {% elif job.status == 'completed' %}
+                    <span class="text-xs">{{ job.synced_messages }} synced, {{ job.skipped_messages }} skipped</span>
+                    {% elif job.exit_code is not none %}
+                    <span class="text-xs">exit: {{ job.exit_code }}</span>
+                    {% else %}<span class="text-xs text-gray-400">—</span>{% endif %}
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-400">{{ job.created_at[:16] }}</td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm space-x-3">
+                    <a href="{{ url_for('web.job_detail', job_id=job.id) }}" class="text-blue-600 hover:text-blue-800 font-medium">View</a>
+                    {% if job.status == 'pending' %}
+                    <form action="{{ url_for('web.job_start', job_id=job.id) }}" method="POST" class="inline">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                        <button type="submit" class="text-emerald-600 hover:text-emerald-800 font-medium bg-transparent border-none p-0 cursor-pointer">Start</button>
+                    </form>
+                    {% endif %}
+                    {% if job.status in ('completed', 'failed', 'stopped') %}
+                    <form action="{{ url_for('web.job_retry', job_id=job.id) }}" method="POST" class="inline">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                        <button type="submit" class="text-amber-600 hover:text-amber-800 font-medium bg-transparent border-none p-0 cursor-pointer">Retry</button>
+                    </form>
+                    {% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
 
-{% if page > 1 %}
-<a href="{{ url_for('web.job_list', status=status_filter, page=page-1) }}">← Previous</a>
-{% endif %}
-<a href="{{ url_for('web.job_list', status=status_filter, page=page+1) }}">Next →</a>
+<!-- Pagination -->
+<div class="flex items-center justify-between mt-6">
+    {% if page > 1 %}
+    <a href="{{ url_for('web.job_list', status=status_filter, page=page-1) }}" class="text-sm text-blue-600 hover:text-blue-800 font-medium">← Previous</a>
+    {% else %}
+    <span></span>
+    {% endif %}
+    <a href="{{ url_for('web.job_list', status=status_filter, page=page+1) }}" class="text-sm text-blue-600 hover:text-blue-800 font-medium">Next →</a>
+</div>
 
 {% else %}
-<p><em>No jobs found. {% if status_filter %}<a href="{{ url_for('web.job_list') }}">Show all</a>{% endif %}</em></p>
+<div class="bg-white rounded-xl shadow-sm border border-dashed border-gray-300 p-12 text-center">
+    <p class="text-gray-400">No jobs found.{% if status_filter %} <a href="{{ url_for('web.job_list') }}" class="text-blue-600 hover:text-blue-800 font-medium">Show all</a>{% endif %}</p>
+</div>
 {% endif %}
 {% endblock %}

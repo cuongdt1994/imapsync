@@ -1,107 +1,11 @@
-/* IMAPsync Web — Minimal custom styles on top of Pico.css */
+/* IMAPsync Web — Minimal custom styles (Tailwind handles everything else) */
 
-/* Status badges */
-.status-badge {
-    display: inline-block;
-    padding: 0.1em 0.6em;
-    border-radius: 4px;
-    font-size: 0.8em;
-    font-weight: 600;
-    text-transform: uppercase;
-}
-
-.status-running {
-    background: var(--pico-color-blue-400);
-    color: #fff;
-}
-
-.status-completed {
-    background: var(--pico-color-green-500);
-    color: #fff;
-}
-
-.status-failed {
-    background: var(--pico-color-red-500);
-    color: #fff;
-}
-
-.status-stopped {
-    background: var(--pico-color-orange-400);
-    color: #fff;
-}
-
-.status-pending {
-    background: var(--pico-color-grey-500);
-    color: #fff;
-}
-
-.status-source {
-    background: var(--pico-color-azure-400);
-    color: #fff;
-}
-
-.status-destination {
-    background: var(--pico-color-purple-400);
-    color: #fff;
-}
-
-/* Dashboard stat numbers */
-.stat-number {
-    font-size: 2rem;
-    font-weight: 700;
-    margin: 0;
-}
-
-/* Flash messages */
-.flash-success {
-    border-left: 4px solid var(--pico-color-green-500);
-    background: var(--pico-color-green-100);
-    color: var(--pico-color-green-700);
-    padding: 0.75rem;
-    margin-bottom: 1rem;
-    border-radius: 4px;
-}
-
-.flash-error {
-    border-left: 4px solid var(--pico-color-red-500);
-    background: var(--pico-color-red-100);
-    color: var(--pico-color-red-700);
-    padding: 0.75rem;
-    margin-bottom: 1rem;
-    border-radius: 4px;
-}
-
-.flash-warning {
-    border-left: 4px solid var(--pico-color-orange-400);
-    background: var(--pico-color-orange-100);
-    color: var(--pico-color-orange-700);
-    padding: 0.75rem;
-    margin-bottom: 1rem;
-    border-radius: 4px;
-}
-
-/* Link-styled buttons (for inline forms) */
-.link-button {
-    background: none;
-    border: none;
-    color: var(--pico-color-primary, #1095c1);
-    cursor: pointer;
-    padding: 0;
-    font: inherit;
-    text-decoration: underline;
-    display: inline;
-}
-
-.link-button:hover {
-    color: var(--pico-color-primary-hover, #0c7da0);
-}
-
-/* Log viewer */
+/* Log viewer - dark terminal style */
 .log-viewer {
     background: #1a1a2e;
     color: #e0e0e0;
     padding: 1rem;
-    border-radius: 6px;
+    border-radius: 0.5rem;
     max-height: 600px;
     overflow-y: auto;
     font-family: "Cascadia Code", "Fira Code", "JetBrains Mono", monospace;
@@ -111,64 +15,17 @@
     word-break: break-all;
 }
 
-.log-stdout {
-    color: #c0c0c0;
-}
+.log-stdout { color: #c0c0c0; }
+.log-stderr { color: #ff6b6b; }
 
-.log-stderr {
-    color: #ff6b6b;
+/* Smooth scrollbar for log viewer */
+.log-viewer::-webkit-scrollbar {
+    width: 6px;
 }
-
-/* Filter bar */
-.filter-bar {
-    display: flex;
-    gap: 0.5rem;
-    margin-bottom: 1rem;
-    flex-wrap: wrap;
+.log-viewer::-webkit-scrollbar-track {
+    background: #16213e;
 }
-
-.filter-bar a {
-    padding: 0.3em 0.7em;
-    border-radius: 4px;
-    text-decoration: none;
-    border: 1px solid var(--pico-muted-border-color);
-    font-size: 0.9em;
-}
-
-.filter-bar a.active {
-    background: var(--pico-color-primary);
-    color: #fff;
-    border-color: var(--pico-color-primary);
-}
-
-/* Progress bar tweaks */
-progress {
-    width: 100%;
-}
-
-/* Responsive tables */
-table {
-    font-size: 0.9rem;
-}
-
-@media (max-width: 768px) {
-    table thead {
-        display: none;
-    }
-    table tbody td {
-        display: block;
-        text-align: right;
-    }
-    table tbody td::before {
-        content: attr(data-label);
-        float: left;
-        font-weight: bold;
-    }
-}
-
-/* Grid tweaks for small screens */
-@media (max-width: 768px) {
-    .grid {
-        grid-template-columns: 1fr;
-    }
+.log-viewer::-webkit-scrollbar-thumb {
+    background: #444;
+    border-radius: 3px;
 }

@@ -2,58 +2,71 @@
 {% block title %}New Migration — IMAPsync{% endblock %}
 
 {% block content %}
-<h1>New Migration Job</h1>
+<div class="max-w-2xl mx-auto">
+    <h1 class="text-2xl font-bold text-gray-900 mb-6">New Migration Job</h1>
 
-<form method="POST">
-    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+    <form method="POST" class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 space-y-5">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
 
-    <div class="grid">
-        <label>
-            Source Account
-            <select name="source_account_id" required>
-                <option value="">— Select source —</option>
-                {% for acc in sources %}
-                <option value="{{ acc.id }}">{{ acc.name }} ({{ acc.imap_host }} | {{ acc.username }})</option>
-                {% endfor %}
-            </select>
-        </label>
-        <label>
-            Destination Account
-            <select name="dest_account_id" required>
-                <option value="">— Select destination —</option>
-                {% for acc in dests %}
-                <option value="{{ acc.id }}">{{ acc.name }} ({{ acc.imap_host }} | {{ acc.username }})</option>
-                {% endfor %}
-            </select>
-        </label>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Source Account</label>
+                <select name="source_account_id" required
+                        class="block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 bg-white">
+                    <option value="">— Select source —</option>
+                    {% for acc in sources %}
+                    <option value="{{ acc.id }}">{{ acc.name }} ({{ acc.imap_host }} | {{ acc.username }})</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Destination Account</label>
+                <select name="dest_account_id" required
+                        class="block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 bg-white">
+                    <option value="">— Select destination —</option>
+                    {% for acc in dests %}
+                    <option value="{{ acc.id }}">{{ acc.name }} ({{ acc.imap_host }} | {{ acc.username }})</option>
+                    {% endfor %}
+                </select>
+            </div>
+        </div>
+
+        <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Folders <span class="text-gray-400 font-normal">(comma-separated, leave empty for all)</span></label>
+            <input type="text" name="folders" placeholder="INBOX, Sent, Drafts"
+                   class="block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500">
+        </div>
+
+        <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Extra imapsync arguments <span class="text-gray-400 font-normal">(optional, advanced)</span></label>
+            <input type="text" name="extra_args" placeholder="e.g. --maxage 365 --delete2duplicates"
+                   class="block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500">
+        </div>
+
+        <div class="flex items-center gap-3 pt-2">
+            <button type="submit" name="action" value="create"
+                    class="inline-flex items-center gap-1.5 px-5 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium text-sm transition-colors">
+                📝 Create Job
+            </button>
+            <button type="submit" name="start_now" value="1"
+                    class="inline-flex items-center gap-1.5 px-5 py-2.5 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 font-medium text-sm transition-colors">
+                🚀 Create & Start
+            </button>
+            <a href="{{ url_for('web.job_list') }}"
+               class="inline-flex items-center gap-1.5 px-5 py-2.5 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 font-medium text-sm transition-colors">
+                Cancel
+            </a>
+        </div>
+    </form>
+
+    {% if not sources or not dests %}
+    <div class="mt-6 bg-amber-50 border border-amber-200 rounded-xl p-5">
+        <p class="text-amber-800 font-medium text-sm">⚠️ You need both source and destination accounts before creating a migration.</p>
+        <div class="flex items-center gap-3 mt-3">
+            <a href="{{ url_for('web.account_quick_setup') }}" class="text-sm text-blue-600 hover:text-blue-800 font-medium">⚡ Quick Setup →</a>
+            <a href="{{ url_for('web.account_add') }}" class="text-sm text-blue-600 hover:text-blue-800 font-medium">+ Add Account →</a>
+        </div>
     </div>
-
-    <label>
-        Folders <small>(comma-separated, leave empty for all folders)</small>
-        <input type="text" name="folders"
-               placeholder="INBOX, Sent, Drafts">
-    </label>
-
-    <label>
-        Extra imapsync arguments <small>(optional, advanced)</small>
-        <input type="text" name="extra_args"
-               placeholder="e.g. --maxage 365 --delete2duplicates">
-    </label>
-
-    <div style="display: flex; gap: 0.5rem; align-items: center;">
-        <button type="submit" name="action" value="create">📝 Create Job</button>
-        <button type="submit" name="start_now" value="1" class="secondary">🚀 Create & Start</button>
-        <a href="{{ url_for('web.job_list') }}" role="button" class="secondary">Cancel</a>
-    </div>
-</form>
-
-{% if not sources or not dests %}
-<article class="flash-warning" style="margin-top: 1rem;">
-    <strong>⚠️ You need both source and destination accounts before creating a migration.</strong>
-    <br>
-    <a href="{{ url_for('web.account_add') }}">Add a source account →</a>
-    &nbsp;
-    <a href="{{ url_for('web.account_add') }}">Add a destination account →</a>
-</article>
-{% endif %}
+    {% endif %}
+</div>
 {% endblock %}

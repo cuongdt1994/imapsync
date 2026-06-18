@@ -2,80 +2,95 @@
 {% block title %}Settings — IMAPsync{% endblock %}
 
 {% block content %}
-<h1>Settings</h1>
+<div class="max-w-2xl mx-auto">
+    <h1 class="text-2xl font-bold text-gray-900 mb-6">Settings</h1>
 
-<form method="POST">
-    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+    <form method="POST" class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 space-y-5 mb-8">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
 
-    <h2>Migration</h2>
-    <div class="grid">
-        <label>
-            Max Concurrent Jobs
-            <input type="number" name="max_concurrent_jobs"
-                   value="{{ settings.get('max_concurrent_jobs', '3') }}"
-                   min="1" max="10" required>
-            <small>Recommended: 2–4 for stability</small>
-        </label>
-        <label>
-            Log Retention (days)
-            <input type="number" name="log_retention_days"
-                   value="{{ settings.get('log_retention_days', '30') }}"
-                   min="1" max="365" required>
-        </label>
+        <h2 class="text-base font-semibold text-gray-900 pb-2 border-b border-gray-100">Migration</h2>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Max Concurrent Jobs</label>
+                <input type="number" name="max_concurrent_jobs"
+                       value="{{ settings.get('max_concurrent_jobs', '3') }}"
+                       min="1" max="10" required
+                       class="block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500">
+                <p class="mt-1 text-xs text-gray-400">Recommended: 2–4 for stability</p>
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Log Retention (days)</label>
+                <input type="number" name="log_retention_days"
+                       value="{{ settings.get('log_retention_days', '30') }}"
+                       min="1" max="365" required
+                       class="block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500">
+            </div>
+        </div>
+
+        <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Timezone</label>
+            <input type="text" name="timezone"
+                   value="{{ settings.get('timezone', 'Asia/Ho_Chi_Minh') }}" required
+                   class="block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500">
+        </div>
+
+        <h2 class="text-base font-semibold text-gray-900 pt-2 pb-2 border-b border-gray-100">Authentication</h2>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Username</label>
+                <input type="text" name="auth_username"
+                       value="{{ settings.get('auth_username', 'admin') }}" required
+                       class="block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500">
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Password <span class="text-gray-400 font-normal">(leave empty to keep current)</span></label>
+                <input type="password" name="auth_password" placeholder="(unchanged)"
+                       class="block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500">
+            </div>
+        </div>
+
+        <div class="pt-2">
+            <button type="submit"
+                    class="inline-flex items-center gap-1.5 px-5 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium text-sm transition-colors">
+                💾 Save Settings
+            </button>
+        </div>
+    </form>
+
+    <!-- System Info -->
+    <h2 class="text-lg font-semibold text-gray-900 mb-3">System Info</h2>
+    <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+        <div class="divide-y divide-gray-200">
+            <div class="flex items-center px-6 py-4 gap-4">
+                <span class="text-sm font-medium text-gray-700 w-44 shrink-0">imapsync binary</span>
+                <code class="text-xs bg-gray-100 px-2 py-0.5 rounded text-gray-600">{{ imapsync_path }}</code>
+                {% if imapsync_ok %}
+                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-emerald-100 text-emerald-800">✓ Found</span>
+                {% else %}
+                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">✗ Not found!</span>
+                {% endif %}
+            </div>
+            <div class="flex items-center px-6 py-4 gap-4">
+                <span class="text-sm font-medium text-gray-700 w-44 shrink-0">Database</span>
+                <code class="text-xs bg-gray-100 px-2 py-0.5 rounded text-gray-600">{{ app_config.DATABASE_PATH }}</code>
+            </div>
+            <div class="flex items-center px-6 py-4 gap-4">
+                <span class="text-sm font-medium text-gray-700 w-44 shrink-0">Log directory</span>
+                <code class="text-xs bg-gray-100 px-2 py-0.5 rounded text-gray-600">{{ app_config.LOGS_DIR }}</code>
+            </div>
+        </div>
     </div>
 
-    <label>
-        Timezone
-        <input type="text" name="timezone"
-               value="{{ settings.get('timezone', 'Asia/Ho_Chi_Minh') }}" required>
-    </label>
-
-    <h2>Authentication</h2>
-    <div class="grid">
-        <label>
-            Username
-            <input type="text" name="auth_username"
-                   value="{{ settings.get('auth_username', 'admin') }}" required>
-        </label>
-        <label>
-            Password <small>(leave empty to keep current)</small>
-            <input type="password" name="auth_password" placeholder="(unchanged)">
-        </label>
-    </div>
-
-    <button type="submit">💾 Save Settings</button>
-</form>
-
-<h2 style="margin-top: 2rem;">System Info</h2>
-<table>
-    <tr>
-        <td><strong>imapsync binary</strong></td>
-        <td>
-            <code>{{ imapsync_path }}</code>
-            {% if imapsync_ok %}
-            <span style="color: var(--pico-color-green-400);">✓ Found</span>
-            {% else %}
-            <span style="color: var(--pico-color-red-400);">✗ Not found!</span>
-            {% endif %}
-        </td>
-    </tr>
-    <tr>
-        <td><strong>Database</strong></td>
-        <td><code>{{ app_config.DATABASE_PATH }}</code></td>
-    </tr>
-    <tr>
-        <td><strong>Log directory</strong></td>
-        <td><code>{{ app_config.LOGS_DIR }}</code></td>
-    </tr>
-</table>
-
-{% if not imapsync_ok %}
-<article class="flash-warning">
-    <strong>⚠️ imapsync is not installed!</strong>
-    <p>Install it on Debian 12:</p>
-    <pre><code>sudo apt update
+    {% if not imapsync_ok %}
+    <div class="mt-6 bg-amber-50 border border-amber-200 rounded-xl p-5">
+        <p class="text-amber-800 font-medium text-sm">⚠️ imapsync is not installed!</p>
+        <p class="text-amber-700 text-sm mt-1">Install it on Debian 12:</p>
+        <pre class="mt-2 bg-gray-900 text-gray-100 p-3 rounded-lg text-xs"><code>sudo apt update
 sudo apt install imapsync</code></pre>
-    <p>Or follow instructions at <a href="https://imapsync.lamiral.info/" target="_blank">imapsync.lamiral.info</a>.</p>
-</article>
-{% endif %}
+        <p class="text-amber-700 text-sm mt-2">Or follow instructions at <a href="https://imapsync.lamiral.info/" target="_blank" class="text-blue-600 hover:text-blue-800 underline">imapsync.lamiral.info</a>.</p>
+    </div>
+    {% endif %}
+</div>
 {% endblock %}

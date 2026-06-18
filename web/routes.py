@@ -169,6 +169,46 @@ def account_delete(account_id: int):
     return redirect(url_for("web.account_list"))
 
 
+@web_bp.route("/accounts/quick-setup", methods=["GET", "POST"])
+def account_quick_setup():
+    """Create both source and destination accounts in one form."""
+    if request.method == "POST":
+        if not _check_csrf():
+            return Response("CSRF validation failed", 400)
+        try:
+            # Create source account
+            src_pw = crypto_service.encrypt(request.form["source_password"])
+            account_model.create_account(
+                name=request.form["source_name"].strip(),
+                imap_host=request.form["source_imap_host"].strip(),
+                imap_port=int(request.form.get("source_imap_port", 993)),
+                username=request.form["source_username"].strip(),
+                password=src_pw,
+                provider=request.form.get("source_provider", "generic").strip(),
+                role="source",
+                notes=request.form.get("source_notes", "").strip(),
+            )
+            # Create destination account
+            dest_pw = crypto_service.encrypt(request.form["dest_password"])
+            account_model.create_account(
+                name=request.form["dest_name"].strip(),
+                imap_host=request.form["dest_imap_host"].strip(),
+                imap_port=int(request.form.get("dest_imap_port", 993)),
+                username=request.form["dest_username"].strip(),
+                password=dest_pw,
+                provider=request.form.get("dest_provider", "generic").strip(),
+                role="destination",
+                notes=request.form.get("dest_notes", "").strip(),
+            )
+            flash("Both accounts created successfully.", "success")
+            return redirect(url_for("web.account_list"))
+        except Exception as exc:
+            flash(f"Error creating accounts: {exc}", "error")
+
+    csrf = _csrf_token()
+    return render_template("accounts/quick_setup.html", csrf_token=csrf)
+
+
 # ---- Jobs ----
 
 @web_bp.route("/jobs")
