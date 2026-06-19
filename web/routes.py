@@ -256,7 +256,32 @@ def job_create():
             folders_str = request.form.get("folders", "").strip()
             folders = [f.strip() for f in folders_str.split(",") if f.strip()] if folders_str else None
 
-            extra_args = request.form.get("extra_args", "").strip() or None
+            # Build extra_args from the checkbox + value fields
+            extra_parts: list[str] = []
+
+            # Boolean flags (checkboxes)
+            flags = request.form.getlist("imapsync_flags")
+            extra_parts.extend(flags)
+
+            # Numeric options
+            maxage = request.form.get("imapsync_maxage", "").strip()
+            if maxage:
+                extra_parts.append(f"--maxage {maxage}")
+
+            minsize = request.form.get("imapsync_minsize", "").strip()
+            if minsize:
+                extra_parts.append(f"--minsize {minsize}")
+
+            maxsize = request.form.get("imapsync_maxsize", "").strip()
+            if maxsize:
+                extra_parts.append(f"--maxsize {maxsize}")
+
+            # Custom free-form args
+            custom = request.form.get("extra_args_custom", "").strip()
+            if custom:
+                extra_parts.append(custom)
+
+            extra_args = " ".join(extra_parts) if extra_parts else None
 
             job_id = job_model.create_job(
                 source_account_id=source_id,

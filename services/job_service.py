@@ -97,7 +97,15 @@ def retry_job(job_id: int) -> int | None:
 
 
 def get_stats() -> dict:
-    """Get overall migration statistics for the dashboard."""
+    """Get overall migration statistics for the dashboard.
+    Also auto-repairs zombie jobs (process dead but status still 'running').
+    """
+    # Auto-repair zombie jobs on every stats refresh
+    zombie_ids = imapsync_service.get_stuck_jobs()
+    for zid in zombie_ids:
+        logger.warning("Auto-repairing zombie job %d → marking stopped", zid)
+        job_model.update_job_status(zid, "stopped")
+
     counts = job_model.count_jobs_by_status()
     running = job_model.get_running_jobs()
 

@@ -108,6 +108,7 @@ def update_job_status(
         "synced_messages": "synced_messages",
         "skipped_messages": "skipped_messages",
         "error_messages": "error_messages",
+        "heartbeat_at": "heartbeat_at",
     }
 
     for kwarg_key, col in field_map.items():

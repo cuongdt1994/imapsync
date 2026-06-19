@@ -37,11 +37,101 @@
                    class="block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500">
         </div>
 
-        <div>
-            <label class="block text-sm font-medium text-gray-700 mb-1">Extra imapsync arguments <span class="text-gray-400 font-normal">(optional, advanced)</span></label>
-            <input type="text" name="extra_args" placeholder="e.g. --maxage 365 --delete2duplicates"
-                   class="block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500">
-        </div>
+        <!-- ── Standard imapsync options ── -->
+        <fieldset class="border border-gray-200 rounded-xl p-5 space-y-4">
+            <legend class="text-sm font-semibold text-gray-800 px-1">Extra imapsync options</legend>
+            <p class="text-xs text-gray-500 -mt-2">Check the options you need. Hover for details.</p>
+
+            <!-- Row 1: Safe / common flags -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <label class="relative flex items-start gap-3 p-3 rounded-lg border border-gray-200 hover:border-blue-300 hover:bg-blue-50/30 cursor-pointer transition-colors has-[:checked]:border-blue-400 has-[:checked]:bg-blue-50">
+                    <input type="checkbox" name="imapsync_flags" value="--dry"
+                           class="mt-0.5 h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500">
+                    <div>
+                        <span class="text-sm font-medium text-gray-800">Dry run</span>
+                        <span class="ml-1.5 text-xs text-gray-500 font-mono">--dry</span>
+                        <p class="text-xs text-gray-500 mt-0.5">Chạy thử, không copy thật. Dùng để kiểm tra trước khi sync.</p>
+                    </div>
+                </label>
+
+                <label class="relative flex items-start gap-3 p-3 rounded-lg border border-gray-200 hover:border-blue-300 hover:bg-blue-50/30 cursor-pointer transition-colors has-[:checked]:border-blue-400 has-[:checked]:bg-blue-50">
+                    <input type="checkbox" name="imapsync_flags" value="--syncinternaldates"
+                           class="mt-0.5 h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500">
+                    <div>
+                        <span class="text-sm font-medium text-gray-800">Sync internal dates</span>
+                        <span class="ml-1.5 text-xs text-gray-500 font-mono">--syncinternaldates</span>
+                        <p class="text-xs text-gray-500 mt-0.5">Giữ nguyên ngày giờ gốc của email trên destination.</p>
+                    </div>
+                </label>
+
+                <label class="relative flex items-start gap-3 p-3 rounded-lg border border-gray-200 hover:border-red-300 hover:bg-red-50/30 cursor-pointer transition-colors has-[:checked]:border-red-400 has-[:checked]:bg-red-50">
+                    <input type="checkbox" name="imapsync_flags" value="--delete2duplicates"
+                           class="mt-0.5 h-4 w-4 rounded border-gray-300 text-red-600 focus:ring-red-500">
+                    <div>
+                        <span class="text-sm font-medium text-gray-800">Mirror mode</span>
+                        <span class="ml-1.5 text-xs text-red-600 font-mono">--delete2duplicates</span>
+                        <p class="text-xs text-gray-500 mt-0.5">⚠️ Xóa email trên destination nếu không có trên source. Dùng để đồng bộ mirror chính xác.</p>
+                    </div>
+                </label>
+
+                <label class="relative flex items-start gap-3 p-3 rounded-lg border border-gray-200 hover:border-blue-300 hover:bg-blue-50/30 cursor-pointer transition-colors has-[:checked]:border-blue-400 has-[:checked]:bg-blue-50">
+                    <input type="checkbox" name="imapsync_flags" value="--noresync"
+                           class="mt-0.5 h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500">
+                    <div>
+                        <span class="text-sm font-medium text-gray-800">Skip previously synced</span>
+                        <span class="ml-1.5 text-xs text-gray-500 font-mono">--noresync</span>
+                        <p class="text-xs text-gray-500 mt-0.5">Bỏ qua email đã sync ở lần trước (không check lại).</p>
+                    </div>
+                </label>
+            </div>
+
+            <!-- Row 2: Flags with values -->
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <div class="p-3 rounded-lg border border-gray-200">
+                    <label class="block text-sm font-medium text-gray-800 mb-1">
+                        <span class="font-mono text-xs text-gray-500">--maxage</span>
+                        <span class="text-gray-500 font-normal text-xs ml-1">(days)</span>
+                    </label>
+                    <input type="number" name="imapsync_maxage" min="1" max="36500" step="1"
+                           placeholder="e.g. 365"
+                           class="block w-full rounded-lg border border-gray-300 px-3 py-1.5 text-sm shadow-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500">
+                    <p class="text-xs text-gray-500 mt-1">Chỉ sync email trong N ngày gần đây.</p>
+                </div>
+
+                <div class="p-3 rounded-lg border border-gray-200">
+                    <label class="block text-sm font-medium text-gray-800 mb-1">
+                        <span class="font-mono text-xs text-gray-500">--minsize</span>
+                        <span class="text-gray-500 font-normal text-xs ml-1">(bytes)</span>
+                    </label>
+                    <input type="number" name="imapsync_minsize" min="1" step="1"
+                           placeholder="e.g. 100000"
+                           class="block w-full rounded-lg border border-gray-300 px-3 py-1.5 text-sm shadow-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500">
+                    <p class="text-xs text-gray-500 mt-1">Bỏ qua email nhỏ hơn N bytes.</p>
+                </div>
+
+                <div class="p-3 rounded-lg border border-gray-200">
+                    <label class="block text-sm font-medium text-gray-800 mb-1">
+                        <span class="font-mono text-xs text-gray-500">--maxsize</span>
+                        <span class="text-gray-500 font-normal text-xs ml-1">(bytes)</span>
+                    </label>
+                    <input type="number" name="imapsync_maxsize" min="1" step="1"
+                           placeholder="e.g. 50000000"
+                           class="block w-full rounded-lg border border-gray-300 px-3 py-1.5 text-sm shadow-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500">
+                    <p class="text-xs text-gray-500 mt-1">Bỏ qua email lớn hơn N bytes (50MB = 50000000).</p>
+                </div>
+            </div>
+
+            <!-- Custom args -->
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">
+                    Additional custom arguments
+                    <span class="text-gray-400 font-normal text-xs">(for flags not listed above, e.g. --regexflag --skipheader)</span>
+                </label>
+                <input type="text" name="extra_args_custom"
+                       placeholder="e.g. --skipheader &quot;X-*&quot; --regexflag &quot;s/\\Flagged//g&quot;"
+                       class="block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500">
+            </div>
+        </fieldset>
 
         <div class="flex items-center gap-3 pt-2">
             <button type="submit" name="action" value="create"

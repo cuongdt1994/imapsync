@@ -45,6 +45,7 @@ CREATE TABLE IF NOT EXISTS jobs (
     skipped_messages    INTEGER DEFAULT 0,
     error_messages      INTEGER DEFAULT 0,
     exit_code           INTEGER,
+    heartbeat_at        TEXT,   -- last watchdog heartbeat timestamp
     started_at          TEXT,
     completed_at        TEXT,
     created_at          TEXT    NOT NULL DEFAULT (datetime('now'))
@@ -84,6 +85,14 @@ def init_db(db_path: Path | None = None) -> None:
 
     conn = sqlite3.connect(str(db_path))
     conn.executescript(SCHEMA_SQL)
+
+    # ── Schema migrations (for databases created before these columns existed) ──
+    # Add heartbeat_at if missing
+    cur = conn.execute("PRAGMA table_info(jobs)")
+    job_columns = {row[1] for row in cur.fetchall()}
+    if "heartbeat_at" not in job_columns:
+        conn.execute("ALTER TABLE jobs ADD COLUMN heartbeat_at TEXT")
+        conn.commit()
 
     # Insert default settings if not present
     for key, value in DEFAULT_SETTINGS.items():

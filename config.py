@@ -39,6 +39,17 @@ class Config:
     )
     IMAPSYNC_TMPDIR: str = os.environ.get("IMAPSYNC_TMPDIR", "/tmp")
 
+    # Number of reconnect attempts on transient network drops
+    IMAPSYNC_RECONNECT_RETRIES: int = int(
+        os.environ.get("IMAPSYNC_RECONNECT_RETRIES", "5")
+    )
+
+    # Maximum runtime per job in seconds (default 24 h).
+    # The watchdog will kill the process if it exceeds this.
+    IMAPSYNC_MAX_RUNTIME_SECONDS: int = int(
+        os.environ.get("IMAPSYNC_MAX_RUNTIME_SECONDS", str(24 * 3600))
+    )
+
     # Concurrency
     MAX_CONCURRENT_JOBS: int = int(
         os.environ.get("MAX_CONCURRENT_JOBS", "3")
