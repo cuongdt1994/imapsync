@@ -1,12 +1,6 @@
 {% extends "base.html" %}
 {% block title %}Job #{{ job.id }} — IMAPsync{% endblock %}
 
-{% block head %}
-{% if job.status == 'running' %}
-<meta http-equiv="refresh" content="5">
-{% endif %}
-{% endblock %}
-
 {% block content %}
 <h1 class="text-2xl font-bold text-gray-900 mb-6">Migration Job #{{ job.id }}</h1>
 
@@ -23,7 +17,7 @@
     <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-5">
         <p class="text-sm font-medium text-gray-500 mb-1">Status</p>
         {% set colors = {'running':'blue','completed':'emerald','failed':'red','stopped':'amber','pending':'gray'} %}
-        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-{{ colors.get(job.status, 'gray') }}-100 text-{{ colors.get(job.status, 'gray') }}-800 uppercase">
+        <span id="job-status-badge" class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-{{ colors.get(job.status, 'gray') }}-100 text-{{ colors.get(job.status, 'gray') }}-800 uppercase">
             {{ job.status }}
         </span>
     </div>
@@ -39,24 +33,31 @@
         <h5 class="text-sm font-medium text-gray-500 mb-3">Progress</h5>
         {% if job.status == 'running' %}
         <div class="w-full bg-gray-200 rounded-full h-2.5 mb-2">
-            <div class="bg-blue-600 rounded-full h-2.5 transition-all duration-700"
-                 style="width: {% if job.total_messages %}{{ (job.synced_messages / job.total_messages * 100) | int }}{% else %}0{% endif %}%"></div>
+            <div id="progress-bar" class="bg-blue-600 rounded-full h-2.5 transition-all duration-700"
+                 style="width: {% if job.total_messages and job.total_messages > 0 %}{{ (job.synced_messages / job.total_messages * 100) | int }}{% else %}0{% endif %}%"></div>
         </div>
-        <p class="text-sm text-gray-600">{{ job.synced_messages }} / {{ job.total_messages or 'scanning…' }} synced</p>
+        <p id="progress-text" class="text-sm text-gray-600">
+            {{ job.synced_messages }} / {{ job.total_messages or 'scanning…' }} synced
+            {% if job.skipped_messages %}({{ job.skipped_messages }} skipped){% endif %}
+            {% if job.error_messages %}<span class="text-red-500">({{ job.error_messages }} errors)</span>{% endif %}
+        </p>
         {% elif job.status == 'completed' %}
-        <p class="text-sm text-emerald-700">✅ {{ job.synced_messages }} synced, {{ job.skipped_messages }} skipped, {{ job.error_messages }} errors</p>
+        <p id="progress-text" class="text-sm text-emerald-700">✅ {{ job.synced_messages }} synced, {{ job.skipped_messages }} skipped, {{ job.error_messages }} errors</p>
         {% else %}
-        <p class="text-sm text-gray-400">—</p>
+        <p id="progress-text" class="text-sm text-gray-400">—</p>
         {% endif %}
     </div>
     <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-5">
         <h5 class="text-sm font-medium text-gray-500 mb-3">Timing</h5>
         <p class="text-sm text-gray-600">Created: {{ job.created_at[:19] }}</p>
         {% if job.started_at %}
-        <p class="text-sm text-gray-600">Started: {{ job.started_at[:19] }}</p>
+        <p id="timing-started" class="text-sm text-gray-600">Started: {{ job.started_at[:19] }}</p>
         {% endif %}
         {% if job.completed_at %}
-        <p class="text-sm text-gray-600">Completed: {{ job.completed_at[:19] }}</p>
+        <p id="timing-completed" class="text-sm text-gray-600">Completed: {{ job.completed_at[:19] }}</p>
+        {% endif %}
+        {% if job.status == 'running' %}
+        <p id="timing-elapsed" class="text-sm text-gray-500 mt-1"></p>
         {% endif %}
     </div>
 </div>
@@ -69,7 +70,7 @@
 {% endif %}
 
 <!-- Action buttons -->
-<div class="flex items-center gap-3 mb-8">
+<div id="action-buttons" class="flex items-center gap-3 mb-8">
     {% if job.status == 'pending' %}
     <form action="{{ url_for('web.job_start', job_id=job.id) }}" method="POST">
         <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
@@ -120,19 +121,130 @@
 
 <!-- Logs -->
 <h2 class="text-lg font-semibold text-gray-900 mb-3">
-    Logs {% if log_count %}<span class="text-sm font-normal text-gray-400">({{ log_count }} lines total)</span>{% endif %}
+    Logs <span id="log-count-label" class="text-sm font-normal text-gray-400">{% if log_count %}({{ log_count }} lines total){% endif %}</span>
 </h2>
 
-{% if logs %}
-<pre class="log-viewer"><code>{% for entry in logs %}<span class="log-{{ entry.stream }}">[{{ entry.timestamp[:19] }}] {{ entry.line }}</span>
+<pre id="log-viewer" class="log-viewer"><code>{% for entry in logs %}<span class="log-{{ entry.stream }}">[{{ entry.timestamp[:19] }}] {{ entry.line }}</span>
 {% endfor %}</code></pre>
 
-{% if log_count > 200 %}
-<p class="mt-2 text-xs text-gray-400">Showing last 200 of {{ log_count }} lines. Logs older than {{ settings.get('log_retention_days', 30) }} days are auto-deleted.</p>
-{% endif %}
-{% else %}
-<div class="bg-white rounded-xl shadow-sm border border-dashed border-gray-300 p-8 text-center">
+{% if not logs %}
+<div id="no-logs-msg" class="bg-white rounded-xl shadow-sm border border-dashed border-gray-300 p-8 text-center">
     <p class="text-gray-400">No log output yet.</p>
 </div>
+{% endif %}
+{% endblock %}
+
+{% block head %}
+{% if job.status == 'running' %}
+<script>
+// ── Live polling for running jobs ──────────────────────────────
+const JOB_ID = {{ job.id }};
+const POLL_INTERVAL = 3000;  // 3 seconds
+let logOffset = {{ logs | length }};
+let pollTimer = null;
+let startTime = new Date("{{ job.started_at or '' }}").getTime();
+
+function updateElapsed() {
+    if (!startTime) return;
+    const el = document.getElementById('timing-elapsed');
+    if (!el) return;
+    const sec = Math.floor((Date.now() - startTime) / 1000);
+    const h = Math.floor(sec / 3600);
+    const m = Math.floor((sec % 3600) / 60);
+    const s = sec % 60;
+    el.textContent = 'Elapsed: ' +
+        (h > 0 ? h + 'h ' : '') +
+        (m > 0 ? m + 'm ' : '') + s + 's';
+}
+
+async function poll() {
+    try {
+        const resp = await fetch(
+            '/api/jobs/' + JOB_ID + '?log_offset=' + logOffset
+        );
+        if (!resp.ok) { stopPolling(); return; }
+        const data = await resp.json();
+        const job = data.job;
+
+        // ── Progress bar ──
+        const bar = document.getElementById('progress-bar');
+        const txt = document.getElementById('progress-text');
+        if (bar && txt) {
+            const total = job.total_messages || 0;
+            const synced = job.synced_messages || 0;
+            const skipped = job.skipped_messages || 0;
+            const errors = job.error_messages || 0;
+            const pct = total > 0 ? Math.round(synced / total * 100) : 0;
+            bar.style.width = pct + '%';
+            let parts = [synced + ' / ' + (total || 'scanning…') + ' synced'];
+            if (skipped) parts.push(skipped + ' skipped');
+            if (errors) parts.push('<span class="text-red-500">' + errors + ' errors</span>');
+            txt.innerHTML = parts.join(', ');
+        }
+
+        // ── Status badge ──
+        const badge = document.getElementById('job-status-badge');
+        if (badge && job.status !== 'running') {
+            badge.textContent = job.status;
+            badge.className = 'inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ' +
+                (job.status === 'completed' ? 'bg-emerald-100 text-emerald-800' :
+                 job.status === 'failed' ? 'bg-red-100 text-red-800' :
+                 job.status === 'stopped' ? 'bg-amber-100 text-amber-800' : 'bg-gray-100 text-gray-800') +
+                ' uppercase';
+            // Reload page to show final state with action buttons
+            stopPolling();
+            setTimeout(() => location.reload(), 800);
+            return;
+        }
+
+        // ── Append new log lines ──
+        if (data.new_logs && data.new_logs.length > 0) {
+            const viewer = document.getElementById('log-viewer');
+            const code = viewer.querySelector('code');
+            const noLogs = document.getElementById('no-logs-msg');
+            if (noLogs) noLogs.remove();
+
+            for (const entry of data.new_logs) {
+                const span = document.createElement('span');
+                span.className = 'log-' + entry.stream;
+                span.textContent = '[' + (entry.timestamp || '').substring(0, 19) + '] ' + entry.line;
+                code.appendChild(span);
+                code.appendChild(document.createTextNode('\n'));
+            }
+            logOffset = data.next_offset;
+
+            // Auto-scroll to bottom
+            viewer.scrollTop = viewer.scrollHeight;
+
+            // Update log count
+            const label = document.getElementById('log-count-label');
+            if (label && data.log_total) {
+                label.textContent = '(' + data.log_total + ' lines total)';
+            }
+        }
+
+        // ── Update timing ──
+        updateElapsed();
+
+    } catch (err) {
+        console.error('Poll error:', err);
+    }
+}
+
+function stopPolling() {
+    if (pollTimer) { clearInterval(pollTimer); pollTimer = null; }
+}
+
+// Start polling
+if (startTime) { updateElapsed(); }
+pollTimer = setInterval(poll, POLL_INTERVAL);
+poll();  // immediate first poll
+
+// Update elapsed every second
+setInterval(updateElapsed, 1000);
+
+// Safety: stop polling after 30 min if page left open
+setTimeout(stopPolling, 30 * 60 * 1000);
+</script>
 {% endif %}
 {% endblock %}

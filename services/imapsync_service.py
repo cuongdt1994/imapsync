@@ -108,20 +108,59 @@ def build_command(
 def _parse_progress_line(line: str) -> dict | None:
     """Parse imapsync progress/error lines for message counts.
 
-    imapsync outputs lines like:
-      "msg 123/456 - copied - 1.2 s"
-      "msg 123/456 - skipped - 0.1 s"
-      "msg 123/456 - error - reason"
+    Handles two kinds of output:
+
+    Per-message (real-time):
+      "msg 123/500 - copied - 1.2 s"
+      "msg 124/500 - skipped - 0.1 s"
+      "msg 125/500 - error - reason"
+
+    End-of-run summary:
       "Messages transferred: 123"
       "Messages skipped   : 45"
       "Messages error     : 2"
       "Total messages     : 500"
     """
+    import re
+
     info: dict = {}
 
+    # ── Per-message progress (real-time) ──
+    # imapsync 2.x format: "msg 42/500 - copied - 1.2 s"
+    m = re.match(
+        r'msg\s+(\d+)/(\d+)\s*-\s*(copied|skipped|error)\b',
+        line, re.IGNORECASE,
+    )
+    if m:
+        current = int(m.group(1))
+        total = int(m.group(2))
+        action = m.group(3).lower()
+        info["total"] = total
+        if action == "copied":
+            info["synced_inc"] = 1
+            info["last_processed"] = current
+        elif action == "skipped":
+            info["skipped_inc"] = 1
+            info["last_processed"] = current
+        elif action == "error":
+            info["errors_inc"] = 1
+            info["last_processed"] = current
+        return info
+
+    # ── Also try: "Copied: 42  Skipped: 3  Error: 1" (older imapsync) ──
+    m2 = re.match(
+        r'(?i).*\bcopied\s*[:=]?\s*(\d+).*\bskipped\s*[:=]?\s*(\d+).*\berror\s*[:=]?\s*(\d+)',
+        line,
+    )
+    if m2:
+        info["synced"] = int(m2.group(1))
+        info["skipped"] = int(m2.group(2))
+        info["errors"] = int(m2.group(3))
+        return info
+
+    # ── End-of-run summary (exact counts, overrides incremental) ──
     lowered = line.lower()
 
-    # Summary lines (higher priority — exact counts from imapsync)
     if "messages transferred" in lowered:
         try:
             info["synced"] = int(line.split(":")[-1].strip())
@@ -143,7 +182,6 @@ def _parse_progress_line(line: str) -> dict | None:
         except ValueError:
             pass
 
-    # Also track bytes for bandwidth awareness
     if "total bytes transferred" in lowered:
         try:
             info["bytes_transferred"] = int(line.split(":")[-1].strip())
@@ -368,6 +406,7 @@ def run_job(job_id: int, on_complete: Callable | None = None) -> None:
         }
 
         def handle_progress(progress: dict):
+            # Absolute values (from summary lines) — override
             if "total" in progress:
                 progress_state["total"] = progress["total"]
             if "synced" in progress:
@@ -376,7 +415,14 @@ def run_job(job_id: int, on_complete: Callable | None = None) -> None:
                 progress_state["skipped"] = progress["skipped"]
             if "errors" in progress:
                 progress_state["errors"] = progress["errors"]
-            # Update DB periodically
+            # Incremental values (from per-message lines) — accumulate
+            if "synced_inc" in progress:
+                progress_state["synced"] += progress["synced_inc"]
+            if "skipped_inc" in progress:
+                progress_state["skipped"] += progress["skipped_inc"]
+            if "errors_inc" in progress:
+                progress_state["errors"] += progress["errors_inc"]
+            # Update DB periodically (every line for real-time feel)
             job_model.update_job_status(
                 job_id, "running",
                 total_messages=progress_state["total"],
