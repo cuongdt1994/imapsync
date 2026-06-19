@@ -89,8 +89,6 @@ def build_command(
         # I/O timeouts so a single stuck message doesn't hang forever
         "--timeout1", "120",
         "--timeout2", "120",
-        # Abort on critical errors instead of looping forever
-        "--abort",
     ]
 
     if folders:
